@@ -1,0 +1,46 @@
+[
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9997,
+    "bbox_normalized": [
+      0.376513153,
+      0.729042888,
+      0.86534214,
+      0.899442315
+    ]
+  },
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.988,
+    "bbox_normalized": [
+      0.358825415,
+      0.129987925,
+      0.863987088,
+      0.330215722
+    ]
+  },
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9398,
+    "bbox_normalized": [
+      0.220481426,
+      0.150961474,
+      0.900034308,
+      0.559563458
+    ]
+  },
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9381,
+    "bbox_normalized": [
+      0.217344284,
+      0.399016023,
+      0.850891352,
+      0.572273791
+    ]
+  }
+]

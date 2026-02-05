@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Detection Compare - SSD vs Faster R-CNN{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Hero Section -->
+    <div class="text-center space-y-3">
+        <h1 class="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">
+            Compare Object Detection Models
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            Upload an image of African wildlife to compare SSD and Faster R-CNN detection performance.
+        </p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+        <form id="upload-form" action="/inference" method="POST" enctype="multipart/form-data">
+            <!-- Drop Zone -->
+            <div id="drop-zone" class="drop-zone border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-500 transition-colors min-h-[250px] flex flex-col items-center justify-center">
+                <div id="upload-prompt" class="space-y-3">
+                    <div class="text-4xl">📤</div>
+                    <div>
+                        <p class="font-medium text-gray-700 dark:text-gray-300">
+                            Drag & drop an image here
+                        </p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            or click to browse · PNG, JPG up to 16MB
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Preview (hidden by default) -->
+                <div id="preview-container" class="hidden w-full">
+                    <div class="relative max-w-md mx-auto">
+                        <img id="preview-image" src="" alt="Preview" class="w-full h-56 object-contain rounded-lg bg-gray-100 dark:bg-gray-800">
+                        <button type="button" id="remove-image" class="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-sm">✕</button>
+                    </div>
+                    <p id="file-name" class="mt-3 text-sm text-gray-600 dark:text-gray-400"></p>
+                </div>
+                
+                <input type="file" id="file-input" name="file" accept=".jpg,.jpeg,.png" class="hidden">
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="mt-5 flex justify-center">
+                <button type="submit" id="submit-btn" class="btn btn-primary px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Run Detection
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sample Images Section -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Sample Images</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Click or drag an image to try detection</p>
+            </div>
+            
+            <!-- Filter Buttons -->
+            <div class="flex flex-wrap gap-2">
+                <button id="lion-btn" class="filter-chip">Lions</button>
+                <button id="warthog-btn" class="filter-chip">Warthogs</button>
+                <button id="ostrich-btn" class="filter-chip">Ostriches
+                </button>
+                <button id="randomize-btn" class="filter-chip filter-chip-active">Randomize</button>
+            </div>
+        </div>
+        
+        <!-- Sample Images Grid -->
+        <div id="sample-images-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <p class="text-center text-gray-500 col-span-full py-8">Loading sample images...</p>
+        </div>
+    </div>
+
+    <!-- Model Info -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">SSD ResNet50</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Single Shot Detector with ResNet50 backbone. Optimized for speed with real-time detection capabilities.
+            </p>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Faster R-CNN ResNet101</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Two-stage detector with ResNet101 backbone. Higher accuracy through region proposal network.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/sample-images.js"></script>
+<script>
+    // File input and drop zone handling
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+    const fileName = document.getElementById('file-name');
+    const removeBtn = document.getElementById('remove-image');
+    const submitBtn = document.getElementById('submit-btn');
+    const uploadForm = document.getElementById('upload-form');
+    
+    // Click to browse
+    dropZone.addEventListener('click', (e) => {
+        if (e.target === removeBtn || removeBtn.contains(e.target)) return;
+        fileInput.click();
+    });
+    
+    // Drag and drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('active', 'border-primary-500');
+        });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('active', 'border-primary-500');
+        });
+    });
+    
+    // Handle dropped files
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        
+        // Check if it's a URL (from sample images)
+        const url = dt.getData('text/uri-list') || dt.getData('text/plain');
+        if (url && url.startsWith('http')) {
+            // Load image from URL
+            loadImageFromUrl(url);
+            return;
+        }
+        
+        // Otherwise handle as file
+        const files = dt.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+    
+    // Handle file selection
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    // Handle file
+    function handleFile(file) {
+        if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
+            showToast('Please select a JPG or PNG image.', 'error');
+            return;
+        }
+        
+        if (file.size > 16 * 1024 * 1024) {
+            showToast('File is too large. Max size is 16MB.', 'error');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            showPreview(e.target.result, file.name);
+        };
+        reader.readAsDataURL(file);
+        
+        // Update file input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+    }
+    
+    // Load image from URL (for sample images)
+    async function loadImageFromUrl(url) {
+        try {
+            showToast('Loading image...', 'info');
+            
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const file = new File([blob], 'sample_image.jpg', { type: blob.type });
+            
+            handleFile(file);
+        } catch (error) {
+            console.error('Error loading image:', error);
+            showToast('Failed to load image.', 'error');
+        }
+    }
+    
+    // Show preview
+    function showPreview(src, name) {
+        previewImage.src = src;
+        fileName.textContent = name;
+        uploadPrompt.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        submitBtn.disabled = false;
+        lucide.createIcons();
+    }
+    
+    // Remove image
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        previewImage.src = '';
+        fileName.textContent = '';
+        fileInput.value = '';
+        uploadPrompt.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+        submitBtn.disabled = true;
+    });
+    
+    // Handle sample image clicks
+    document.addEventListener('click', (e) => {
+        const sampleImage = e.target.closest('.sample-image');
+        if (sampleImage) {
+            const imgSrc = sampleImage.querySelector('img')?.src || sampleImage.src;
+            if (imgSrc) {
+                loadImageFromUrl(imgSrc);
+            }
+        }
+    });
+    
+    // Form submit
+    uploadForm.addEventListener('submit', (e) => {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            showToast('Please select an image first.', 'warning');
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Processing...';
+        lucide.createIcons();
+    });
+</script>
+{% endblock %}

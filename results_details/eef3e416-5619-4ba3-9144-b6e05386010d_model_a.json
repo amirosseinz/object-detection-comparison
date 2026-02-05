@@ -1,0 +1,13 @@
+[
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9995,
+    "bbox_normalized": [
+      0.0699033141,
+      0.238160968,
+      0.993459165,
+      0.613771141
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9999,
+    "bbox_normalized": [
+      0.377312183,
+      0.726566,
+      0.856039405,
+      0.879366696
+    ]
+  },
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9997,
+    "bbox_normalized": [
+      0.225854978,
+      0.40753603,
+      0.855429232,
+      0.568929493
+    ]
+  },
+  {
+    "class_id": 1,
+    "class_name": "StruthioCamelus",
+    "confidence": 0.9995,
+    "bbox_normalized": [
+      0.355238557,
+      0.130424425,
+      0.869424522,
+      0.327979535
+    ]
+  }
+]

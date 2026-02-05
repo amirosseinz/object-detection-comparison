@@ -1,0 +1,13 @@
+[
+  {
+    "class_id": 3,
+    "class_name": "Pantheraleo",
+    "confidence": 0.9156,
+    "bbox_normalized": [
+      0.0016849637,
+      0.0168538392,
+      0.974116683,
+      0.789588571
+    ]
+  }
+]

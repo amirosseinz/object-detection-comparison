@@ -1,0 +1,24 @@
+[
+  {
+    "class_id": 3,
+    "class_name": "Pantheraleo",
+    "confidence": 0.9992,
+    "bbox_normalized": [
+      0.27936852,
+      0.179675311,
+      0.951599956,
+      0.667068601
+    ]
+  },
+  {
+    "class_id": 2,
+    "class_name": "PhacochoerusAfricanus",
+    "confidence": 0.5684,
+    "bbox_normalized": [
+      0.27936852,
+      0.179675311,
+      0.951599956,
+      0.667068601
+    ]
+  }
+]

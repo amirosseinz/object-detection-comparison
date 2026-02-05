@@ -1,0 +1,46 @@
+[
+  {
+    "class_id": 3,
+    "class_name": "Pantheraleo",
+    "confidence": 0.9957,
+    "bbox_normalized": [
+      0.577234626,
+      0.573053658,
+      0.930360556,
+      0.879071057
+    ]
+  },
+  {
+    "class_id": 3,
+    "class_name": "Pantheraleo",
+    "confidence": 0.874,
+    "bbox_normalized": [
+      0.546215534,
+      0.276205927,
+      0.903211832,
+      0.39914307
+    ]
+  },
+  {
+    "class_id": 3,
+    "class_name": "Pantheraleo",
+    "confidence": 0.5577,
+    "bbox_normalized": [
+      0.366998553,
+      0.311028779,
+      0.561794281,
+      0.365566611
+    ]
+  },
+  {
+    "class_id": 3,
+    "class_name": "Pantheraleo",
+    "confidence": 0.5247,
+    "bbox_normalized": [
+      0.409278482,
+      0.470453292,
+      0.621111214,
+      0.556965292
+    ]
+  }
+]

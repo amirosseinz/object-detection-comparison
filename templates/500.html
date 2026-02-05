@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Server Error | Detection Compare{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+    <div class="text-center max-w-lg">
+        <div class="mb-8">
+            <h1 class="text-8xl font-black text-gray-200 dark:text-gray-800">500</h1>
+        </div>
+        
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Something went wrong
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-8">
+            We encountered an error while processing your request. Please try again.
+        </p>
+        
+        {% if error %}
+        <details class="mb-8 text-left bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
+            <summary class="cursor-pointer font-medium text-gray-700 dark:text-gray-300">Error details</summary>
+            <pre class="mt-2 text-sm text-red-600 dark:text-red-400 overflow-auto">{{ error }}</pre>
+        </details>
+        {% endif %}
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/" class="btn btn-primary">
+                <i data-lucide="home" class="w-4 h-4 mr-2"></i>
+                Go Home
+            </a>
+            <button onclick="window.location.reload()" class="btn btn-outline">
+                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                Try Again
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

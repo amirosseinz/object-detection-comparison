@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Detection Compare{% endblock %}</title>
+    <meta name="description" content="Compare SSD vs Faster R-CNN object detection models on African wildlife images">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                        'mono': ['SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    
+    <style>
+        body { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Toast container */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+        }
+        
+        .toast {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast-success { background: #10B981; color: white; }
+        .toast-error { background: #EF4444; color: white; }
+        .toast-warning { background: #F59E0B; color: white; }
+        .toast-info { background: #0ea5e9; color: white; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <!-- Skip to content for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-lg z-50">
+        Skip to content
+    </a>
+
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-14">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                        Detection Compare
+                    </a>
+                </div>
+                
+                <!-- Desktop Nav -->
+                <div class="hidden sm:flex sm:items-center sm:space-x-1">
+                    <a href="/" class="nav-link {% if request.endpoint == 'index' %}nav-link-active{% endif %}">
+                        Upload
+                    </a>
+                    <a href="/results" class="nav-link {% if request.endpoint == 'results' %}nav-link-active{% endif %}">
+                        Results
+                    </a>
+                    <a href="/metrics" class="nav-link {% if request.endpoint == 'metrics' %}nav-link-active{% endif %}">
+                        Metrics
+                    </a>
+                    
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="ml-2 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle dark mode">
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="flex items-center sm:hidden">
+                    <button id="theme-toggle-mobile" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 mr-1" aria-label="Toggle dark mode">
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                    <button id="mobile-menu-toggle" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Open menu">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden sm:hidden border-t border-gray-200 dark:border-gray-800">
+            <div class="px-4 py-3 space-y-1">
+                <a href="/" class="mobile-nav-link {% if request.endpoint == 'index' %}mobile-nav-link-active{% endif %}">
+                    Upload
+                </a>
+                <a href="/results" class="mobile-nav-link {% if request.endpoint == 'results' %}mobile-nav-link-active{% endif %}">
+                    Results
+                </a>
+                <a href="/metrics" class="mobile-nav-link {% if request.endpoint == 'metrics' %}mobile-nav-link-active{% endif %}">
+                    Metrics
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="toast-container" id="toast-container">
+                {% for category, message in messages %}
+                    <div class="toast toast-{{ category if category in ['success', 'error', 'warning', 'info'] else 'info' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+                Built by Amir Akrami · SSD vs Faster R-CNN Object Detection Comparison
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Dark mode toggle
+        function initDarkMode() {
+            const toggles = [document.getElementById('theme-toggle'), document.getElementById('theme-toggle-mobile')];
+            
+            // Check saved preference or system preference
+            if (localStorage.getItem('darkMode') === 'true' || 
+                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            toggles.forEach(toggle => {
+                if (toggle) {
+                    toggle.addEventListener('click', () => {
+                        document.documentElement.classList.toggle('dark');
+                        localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+                    });
+                }
+            });
+        }
+        
+        // Mobile menu toggle
+        function initMobileMenu() {
+            const toggle = document.getElementById('mobile-menu-toggle');
+            const menu = document.getElementById('mobile-menu');
+            
+            if (toggle && menu) {
+                toggle.addEventListener('click', () => {
+                    menu.classList.toggle('hidden');
+                });
+            }
+        }
+        
+        // Auto-hide toasts
+        function initToasts() {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach((toast, index) => {
+                setTimeout(() => {
+                    toast.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000 + (index * 500));
+            });
+        }
+        
+        // Toast helper function
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Initialize on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            initMobileMenu();
+            initToasts();
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

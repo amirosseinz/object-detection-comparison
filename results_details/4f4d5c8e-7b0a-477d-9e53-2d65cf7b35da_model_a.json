@@ -1,0 +1,13 @@
+[
+  {
+    "class_id": 2,
+    "class_name": "PhacochoerusAfricanus",
+    "confidence": 0.9995,
+    "bbox_normalized": [
+      0.274948329,
+      0.214174,
+      0.815463066,
+      0.587605953
+    ]
+  }
+]

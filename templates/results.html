@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Results | Detection Compare{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if show_specific and image_data %}
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">Detection Results</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ image_data.original_filename }} · {{ image_data.timestamp }}
+            </p>
+        </div>
+        <a href="/" class="btn btn-primary">Upload New Image</a>
+    </div>
+
+    <!-- Comparison Summary Panel -->
+    {% set model_a_count = image_data.model_a_detection_count or 0 %}
+    {% set model_b_count = image_data.model_b_detection_count or 0 %}
+    {% set model_a_time = image_data.model_a_inference_time or 0 %}
+    {% set model_b_time = image_data.model_b_inference_time or 0 %}
+    {% set model_a_dets = image_data.model_a_detections or [] %}
+    {% set model_b_dets = image_data.model_b_detections or [] %}
+    
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Comparison Summary</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <!-- Speed Comparison -->
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Faster Model</div>
+                {% if model_a_time > 0 and model_b_time > 0 %}
+                    {% if model_a_time < model_b_time %}
+                        <div class="text-lg font-semibold text-primary-600 dark:text-primary-400">SSD</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format(((model_b_time - model_a_time) / model_b_time) * 100) }}% faster</div>
+                    {% elif model_b_time < model_a_time %}
+                        <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">Faster R-CNN</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format(((model_a_time - model_b_time) / model_a_time) * 100) }}% faster</div>
+                    {% else %}
+                        <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">Equal</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Same speed</div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-lg font-semibold text-gray-400">N/A</div>
+                {% endif %}
+            </div>
+            
+            <!-- More Detections -->
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">More Detections</div>
+                {% if model_a_count > model_b_count %}
+                    <div class="text-lg font-semibold text-primary-600 dark:text-primary-400">SSD</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">+{{ model_a_count - model_b_count }} more</div>
+                {% elif model_b_count > model_a_count %}
+                    <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">Faster R-CNN</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">+{{ model_b_count - model_a_count }} more</div>
+                {% else %}
+                    <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">Equal</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ model_a_count }} each</div>
+                {% endif %}
+            </div>
+            
+            <!-- Average Confidence -->
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Higher Confidence</div>
+                {% set model_a_avg = (model_a_dets|sum(attribute='confidence') / model_a_dets|length * 100) if model_a_dets|length > 0 else 0 %}
+                {% set model_b_avg = (model_b_dets|sum(attribute='confidence') / model_b_dets|length * 100) if model_b_dets|length > 0 else 0 %}
+                {% if model_a_avg > 0 or model_b_avg > 0 %}
+                    {% if model_a_avg > model_b_avg %}
+                        <div class="text-lg font-semibold text-primary-600 dark:text-primary-400">SSD</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format(model_a_avg) }}% avg</div>
+                    {% elif model_b_avg > model_a_avg %}
+                        <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">Faster R-CNN</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format(model_b_avg) }}% avg</div>
+                    {% else %}
+                        <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">Equal</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format(model_a_avg) }}% avg</div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-lg font-semibold text-gray-400">N/A</div>
+                {% endif %}
+            </div>
+            
+            <!-- Total Processing Time -->
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Total Time</div>
+                <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ "%.2f"|format(model_a_time + model_b_time) }}s</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Both models</div>
+            </div>
+        </div>
+        
+        <!-- Detailed Metrics Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <th class="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Metric</th>
+                        <th class="text-center py-3 px-2 font-medium text-primary-600 dark:text-primary-400">SSD</th>
+                        <th class="text-center py-3 px-2 font-medium text-gray-600 dark:text-gray-400">Faster R-CNN</th>
+                        <th class="text-center py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Winner</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tr>
+                        <td class="py-3 px-2 text-gray-700 dark:text-gray-300">Inference Time</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">{{ "%.3f"|format(model_a_time) }}s</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">{{ "%.3f"|format(model_b_time) }}s</td>
+                        <td class="py-3 px-2 text-center">
+                            {% if model_a_time > 0 and model_b_time > 0 %}
+                                {% if model_a_time < model_b_time %}
+                                    <span class="inline-block px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded text-xs font-medium">SSD</span>
+                                {% elif model_b_time < model_a_time %}
+                                    <span class="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs font-medium">F-RCNN</span>
+                                {% else %}
+                                    <span class="text-gray-400">Tie</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-2 text-gray-700 dark:text-gray-300">Detection Count</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">{{ model_a_count }}</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">{{ model_b_count }}</td>
+                        <td class="py-3 px-2 text-center">
+                            {% if model_a_count > model_b_count %}
+                                <span class="inline-block px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded text-xs font-medium">SSD</span>
+                            {% elif model_b_count > model_a_count %}
+                                <span class="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs font-medium">F-RCNN</span>
+                            {% else %}
+                                <span class="text-gray-400">Tie</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-2 text-gray-700 dark:text-gray-300">Avg Confidence</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">{{ "%.1f"|format(model_a_avg) }}%</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">{{ "%.1f"|format(model_b_avg) }}%</td>
+                        <td class="py-3 px-2 text-center">
+                            {% if model_a_avg > model_b_avg %}
+                                <span class="inline-block px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded text-xs font-medium">SSD</span>
+                            {% elif model_b_avg > model_a_avg %}
+                                <span class="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs font-medium">F-RCNN</span>
+                            {% else %}
+                                <span class="text-gray-400">Tie</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if model_a_dets|length > 0 or model_b_dets|length > 0 %}
+                    <tr>
+                        <td class="py-3 px-2 text-gray-700 dark:text-gray-300">Max Confidence</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">
+                            {% if model_a_dets|length > 0 %}{{ "%.1f"|format(model_a_dets|map(attribute='confidence')|max * 100) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">
+                            {% if model_b_dets|length > 0 %}{{ "%.1f"|format(model_b_dets|map(attribute='confidence')|max * 100) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-center">
+                            {% set max_a = model_a_dets|map(attribute='confidence')|max if model_a_dets|length > 0 else 0 %}
+                            {% set max_b = model_b_dets|map(attribute='confidence')|max if model_b_dets|length > 0 else 0 %}
+                            {% if max_a > max_b %}
+                                <span class="inline-block px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded text-xs font-medium">SSD</span>
+                            {% elif max_b > max_a %}
+                                <span class="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs font-medium">F-RCNN</span>
+                            {% else %}
+                                <span class="text-gray-400">Tie</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-2 text-gray-700 dark:text-gray-300">Min Confidence</td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">
+                            {% if model_a_dets|length > 0 %}{{ "%.1f"|format(model_a_dets|map(attribute='confidence')|min * 100) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-center font-mono text-gray-900 dark:text-white">
+                            {% if model_b_dets|length > 0 %}{{ "%.1f"|format(model_b_dets|map(attribute='confidence')|min * 100) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-center">
+                            {% set min_a = model_a_dets|map(attribute='confidence')|min if model_a_dets|length > 0 else 0 %}
+                            {% set min_b = model_b_dets|map(attribute='confidence')|min if model_b_dets|length > 0 else 0 %}
+                            {% if min_a > min_b %}
+                                <span class="inline-block px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded text-xs font-medium">SSD</span>
+                            {% elif min_b > min_a %}
+                                <span class="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs font-medium">F-RCNN</span>
+                            {% else %}
+                                <span class="text-gray-400">Tie</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Class-by-Class Breakdown -->
+    {% set all_classes = [] %}
+    {% for det in model_a_dets %}{% if det.class_name not in all_classes %}{% set _ = all_classes.append(det.class_name) %}{% endif %}{% endfor %}
+    {% for det in model_b_dets %}{% if det.class_name not in all_classes %}{% set _ = all_classes.append(det.class_name) %}{% endif %}{% endfor %}
+    
+    {% if all_classes|length > 0 %}
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Detection Breakdown by Class</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {% for class_name in all_classes|sort %}
+            {% set a_count = model_a_dets|selectattr('class_name', 'equalto', class_name)|list|length %}
+            {% set b_count = model_b_dets|selectattr('class_name', 'equalto', class_name)|list|length %}
+            {% set a_confs = model_a_dets|selectattr('class_name', 'equalto', class_name)|map(attribute='confidence')|list %}
+            {% set b_confs = model_b_dets|selectattr('class_name', 'equalto', class_name)|map(attribute='confidence')|list %}
+            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="font-medium text-gray-900 dark:text-white mb-2">{{ class_name }}</div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">SSD</div>
+                        <div class="font-semibold text-primary-600 dark:text-primary-400">{{ a_count }} detected</div>
+                        {% if a_confs|length > 0 %}
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format((a_confs|sum / a_confs|length) * 100) }}% avg conf</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Faster R-CNN</div>
+                        <div class="font-semibold text-gray-700 dark:text-gray-300">{{ b_count }} detected</div>
+                        {% if b_confs|length > 0 %}
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ "%.1f"|format((b_confs|sum / b_confs|length) * 100) }}% avg conf</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Side-by-Side Detection Images -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Model A Card -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+            <div class="bg-primary-600 text-white px-5 py-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-semibold">SSD ResNet50</h2>
+                        <p class="text-primary-100 text-xs">Single Shot MultiBox Detector</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-bold">{{ model_a_count }}</div>
+                        <div class="text-primary-100 text-xs">detections</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-4">
+                    {% if image_data.model_a_static_url %}
+                    <img src="{{ image_data.model_a_static_url }}" alt="SSD detection result" class="w-full h-full object-contain">
+                    {% else %}
+                    <img src="{{ image_data.original_url }}" alt="Original image" class="w-full h-full object-contain">
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                    <span>Inference Time</span>
+                    <span class="font-mono font-medium text-gray-900 dark:text-white">{{ "%.3f"|format(model_a_time) }}s</span>
+                </div>
+                
+                {% if model_a_dets %}
+                <div class="space-y-2">
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Detections</div>
+                    {% for det in model_a_dets %}
+                    <div class="flex items-center justify-between py-2">
+                        <span class="text-sm text-gray-900 dark:text-white">{{ det.class_name }}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-primary-500 rounded-full" style="width: {{ (det.confidence * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-xs font-mono text-gray-600 dark:text-gray-400 w-12 text-right">{{ "%.1f"|format(det.confidence * 100) }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No objects detected</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Model B Card -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+            <div class="bg-gray-700 text-white px-5 py-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-semibold">Faster R-CNN ResNet101</h2>
+                        <p class="text-gray-300 text-xs">Region-based CNN</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-bold">{{ model_b_count }}</div>
+                        <div class="text-gray-300 text-xs">detections</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-4">
+                    {% if image_data.model_b_static_url %}
+                    <img src="{{ image_data.model_b_static_url }}" alt="Faster R-CNN detection result" class="w-full h-full object-contain">
+                    {% else %}
+                    <img src="{{ image_data.original_url }}" alt="Original image" class="w-full h-full object-contain">
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                    <span>Inference Time</span>
+                    <span class="font-mono font-medium text-gray-900 dark:text-white">{{ "%.3f"|format(model_b_time) }}s</span>
+                </div>
+                
+                {% if model_b_dets %}
+                <div class="space-y-2">
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Detections</div>
+                    {% for det in model_b_dets %}
+                    <div class="flex items-center justify-between py-2">
+                        <span class="text-sm text-gray-900 dark:text-white">{{ det.class_name }}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gray-500 rounded-full" style="width: {{ (det.confidence * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-xs font-mono text-gray-600 dark:text-gray-400 w-12 text-right">{{ "%.1f"|format(det.confidence * 100) }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No objects detected</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Original Image -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Original Image</h2>
+        <div class="max-w-2xl mx-auto">
+            <div class="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                <img src="{{ image_data.original_url }}" alt="Original uploaded image" class="w-full h-full object-contain">
+            </div>
+        </div>
+    </div>
+
+    {% elif show_recent %}
+    <!-- Recent Results -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">Recent Results</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Click on any result to view details</p>
+        </div>
+        <a href="/" class="btn btn-primary">Upload New Image</a>
+    </div>
+
+    {% if recent_images and recent_images|length > 0 %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% for img in recent_images %}
+        <a href="/results?id={{ img.image_id }}" class="group block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <div class="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                <img src="{{ img.original_url or img.model_a_static_url }}" 
+                     alt="Result for {{ img.original_filename }}" 
+                     class="w-full h-full object-cover"
+                     loading="lazy"
+                     onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-gray-400\'><span class=\'text-4xl\'>📷</span></div>'">
+            </div>
+            <div class="p-3">
+                <p class="font-medium text-sm text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                    {{ img.original_filename or 'Untitled' }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ img.timestamp }}</p>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300">
+                        SSD: {{ img.model_a_detection_count or 0 }}
+                    </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                        F-RCNN: {{ img.model_b_detection_count or 0 }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div class="text-4xl mb-4">📷</div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Results Yet</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">Upload an image to see detection results.</p>
+        <a href="/" class="btn btn-primary">Upload Image</a>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No Data -->
+    <div class="text-center py-16">
+        <div class="text-4xl mb-4">🔍</div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Results Found</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">Upload an image to get started.</p>
+        <a href="/" class="btn btn-primary">Upload Image</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

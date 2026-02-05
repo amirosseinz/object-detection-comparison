@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Metrics | Detection Compare{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">Performance Metrics</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Aggregate statistics from {{ metrics.total_images }} processed images
+            </p>
+        </div>
+        <a href="/" class="btn btn-primary">Upload New Image</a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Images</p>
+            <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{{ metrics.total_images }}</h3>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">SSD Avg Time</p>
+            <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{{ "%.3f"|format(metrics.model_a.avg_time) }}<span class="text-base font-normal">s</span></h3>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">F-RCNN Avg Time</p>
+            <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{{ "%.3f"|format(metrics.model_b.avg_time) }}<span class="text-base font-normal">s</span></h3>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Detections</p>
+            <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{{ metrics.model_a.total_detections + metrics.model_b.total_detections }}</h3>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Inference Time Chart -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">
+                Average Inference Time
+            </h3>
+            <div class="h-56">
+                <canvas id="timeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Model Comparison Summary -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">
+                Model Comparison
+            </h3>
+            <div class="space-y-5">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-gray-900 dark:text-white">SSD ResNet50</span>
+                        {% if metrics.model_a.avg_time < metrics.model_b.avg_time %}
+                        <span class="text-xs px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded">Faster</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div class="flex justify-between"><span>Avg Speed</span><span class="font-mono">{{ "%.3f"|format(metrics.model_a.avg_time) }}s</span></div>
+                        <div class="flex justify-between"><span>Avg Detections</span><span class="font-mono">{{ "%.1f"|format(metrics.model_a.avg_detections) }}</span></div>
+                        <div class="flex justify-between"><span>Total Detections</span><span class="font-mono">{{ metrics.model_a.total_detections }}</span></div>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-100 dark:border-gray-800 pt-5">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-gray-900 dark:text-white">Faster R-CNN ResNet101</span>
+                        {% if metrics.model_b.avg_detections > metrics.model_a.avg_detections %}
+                        <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded">More Accurate</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div class="flex justify-between"><span>Avg Speed</span><span class="font-mono">{{ "%.3f"|format(metrics.model_b.avg_time) }}s</span></div>
+                        <div class="flex justify-between"><span>Avg Detections</span><span class="font-mono">{{ "%.1f"|format(metrics.model_b.avg_detections) }}</span></div>
+                        <div class="flex justify-between"><span>Total Detections</span><span class="font-mono">{{ metrics.model_b.total_detections }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detection Count Chart -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">
+            Detection Count Comparison
+        </h3>
+        <div class="h-56">
+            <canvas id="detectionsChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#9CA3AF' : '#6B7280';
+        const gridColor = isDark ? '#1f2937' : '#f3f4f6';
+        
+        // Inference Time Chart
+        const timeCtx = document.getElementById('timeChart').getContext('2d');
+        new Chart(timeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['SSD', 'Faster R-CNN'],
+                datasets: [{
+                    label: 'Avg Inference Time (s)',
+                    data: [{{ metrics.model_a.avg_time }}, {{ metrics.model_b.avg_time }}],
+                    backgroundColor: ['#0ea5e9', '#6B7280'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColor }
+                    }
+                }
+            }
+        });
+        
+        // Detection Count Chart
+        const detectionsCtx = document.getElementById('detectionsChart').getContext('2d');
+        new Chart(detectionsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Detections', 'Avg Detections per Image'],
+                datasets: [
+                    {
+                        label: 'SSD',
+                        data: [{{ metrics.model_a.total_detections }}, {{ metrics.model_a.avg_detections }}],
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Faster R-CNN',
+                        data: [{{ metrics.model_b.total_detections }}, {{ metrics.model_b.avg_detections }}],
+                        backgroundColor: '#6B7280',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: textColor }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColor }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

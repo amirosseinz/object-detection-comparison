@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found | Detection Compare{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+    <div class="text-center max-w-lg">
+        <div class="mb-8">
+            <h1 class="text-8xl font-black text-gray-200 dark:text-gray-800">404</h1>
+        </div>
+        
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Page not found
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-8">
+            The page you're looking for doesn't exist or has been moved.
+        </p>
+        
+        <div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl p-6 mb-8 text-left">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                <i data-lucide="lightbulb" class="w-4 h-4 mr-2 text-amber-500"></i>
+                Helpful links:
+            </h3>
+            <ul class="space-y-2">
+                <li>
+                    <a href="/" class="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                        Upload an image
+                    </a>
+                </li>
+                <li>
+                    <a href="/results" class="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <i data-lucide="git-compare" class="w-4 h-4 mr-2"></i>
+                        View results
+                    </a>
+                </li>
+                <li>
+                    <a href="/metrics" class="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2"></i>
+                        View metrics
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <a href="/" class="btn btn-primary">
+            <i data-lucide="home" class="w-4 h-4 mr-2"></i>
+            Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

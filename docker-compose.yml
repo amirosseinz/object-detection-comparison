@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Flask web application
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/app
+      - ./originals:/app/originals
+      - ./static/classified:/app/static/classified
+      - ./models:/app/models
+      - ./models/label_map.pbtxt:/models/label_map.pbtxt
+    depends_on:
+      - ssd-serving
+      - faster-rcnn-serving
+    environment:
+      - TF_SERVING_URL_MODEL_A=http://ssd-serving:8501/v1/models/ssd:predict
+      - TF_SERVING_URL_MODEL_B=http://faster-rcnn-serving:8501/v1/models/faster_rcnn:predict
+      - SECRET_KEY=${SECRET_KEY:-}
+      - FLASK_ENV=${FLASK_ENV:-production}
+    networks:
+      - app-network
+
+  # TensorFlow Serving for SSD Model (CPU version)
+  ssd-serving:
+    image: tensorflow/serving:latest
+    container_name: ssd-serving
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./models/ssd:/models/ssd
+      - ./models/label_map.pbtxt:/models/ssd/1/label_map.pbtxt
+    environment:
+      - MODEL_NAME=ssd
+    networks:
+      - app-network
+
+  # TensorFlow Serving for Faster R-CNN Model (CPU version)
+  faster-rcnn-serving:
+    image: tensorflow/serving:latest
+    container_name: faster-rcnn-serving
+    ports:
+      - "8502:8501"
+    volumes:
+      - ./models/faster_rcnn:/models/faster_rcnn
+      - ./models/label_map.pbtxt:/models/faster_rcnn/1/label_map.pbtxt
+    environment:
+      - MODEL_NAME=faster_rcnn
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  originals:
+  classified-a:
+  classified-b:
