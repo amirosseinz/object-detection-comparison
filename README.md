@@ -323,14 +323,6 @@ ObjectDetectionComparisonFlaskApp/
 
 ---
 
-## Future Enhancements
-
-- **Batch inference endpoint**: Process multiple images in single request for throughput optimization
-- **Model versioning**: A/B testing framework for comparing model iterations
-- **Prometheus metrics**: Export inference latency histograms for Grafana dashboards
-- **TensorRT optimization**: INT8 quantization for edge deployment scenarios
-
----
 
 ## Contributing
 
