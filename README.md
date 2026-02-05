@@ -88,6 +88,8 @@ docker pull ahakrami98/object-detection-comparison:latest
 docker run -p 80:80 object-detection-comparison:latest
 ```
 Open your browser on Localhost:80 
+
+
 **Upload & Detect**:
 ```bash
 curl -X POST http://localhost/inference \
