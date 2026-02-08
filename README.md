@@ -82,13 +82,6 @@ Selecting the optimal object detection model requires quantifying the speed-accu
 ---
 
 ## Quick Start API
-**Pull from Dockerhub and use the webapp directly**:
-```bash
-docker pull ahakrami98/object-detection-comparison:latest
-docker run -p 80:80 object-detection-comparison:latest
-```
-Open your browser on Localhost:80 
-
 
 **Upload & Detect**:
 ```bash
@@ -136,7 +129,9 @@ curl http://localhost/health
 
 ---
 
-## Setup
+## How to Run the Project (Two Supported Paths)
+
+This project provides two ways to run the object detection comparison platform, depending on your needs and whether you want to use the pre-trained models or provide your own.
 
 ### Prerequisites
 
@@ -144,12 +139,66 @@ curl http://localhost/health
 - 4GB+ RAM available for containers
 - **For GPU**: NVIDIA GPU with [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed
 
-### Clone Repository
+### Option A — Recommended: Run the Prebuilt Docker Image (Works Out of the Box)
 
+A fully working image with model variables included is published on Docker Hub.
+
+**Docker Hub**: https://hub.docker.com/r/ahakrami98/object-detection-comparison
+
+```bash
+docker pull ahakrami98/object-detection-comparison:latest
+docker run -p 80:80 ahakrami98/object-detection-comparison:latest
+```
+
+Open in browser: http://localhost
+
+**This image contains:**
+- Flask app
+- TensorFlow Serving
+- SSD + Faster R-CNN models
+- All required variables/ directories
+
+**This is the reference implementation and the only way to run the project without additional setup.**
+
+### Option B — Use the GitHub Code With Your Own Models
+
+If you want to:
+- Replace the models
+- Benchmark different architectures
+- Retrain on a new dataset
+
+You can do so by supplying your own TensorFlow SavedModels.
+
+**Clone the repository:**
 ```bash
 git clone https://github.com/amirosseinz/object-detection-comparison.git
 cd object-detection-comparison
 ```
+
+**Required directory structure:**
+```
+models/
+├── label_map.pbtxt
+├── ssd/
+│   └── 1/
+│       ├── saved_model.pb
+│       └── variables/
+│           ├── variables.index
+│           └── variables.data-00000-of-00001
+└── faster_rcnn/
+    └── 1/
+        ├── saved_model.pb
+        └── variables/
+            ├── variables.index
+            └── variables.data-00000-of-00001
+```
+
+**Once models are in place:**
+```bash
+docker compose up --build
+```
+
+**Note**: Without valid model variables, TensorFlow Serving will start but inference will fail. This is expected behavior.
 
 ### Docker Compose Files
 
@@ -157,21 +206,6 @@ cd object-detection-comparison
 |------|--------------------------|----------|
 | `docker-compose.yml` | `tensorflow/serving:latest` | CPU-only deployment (default) |
 | `docker-compose.gpu.yml` | `tensorflow/serving:latest-gpu` | GPU-accelerated inference (NVIDIA) |
-
-### CPU Deployment (Default)
-
-For systems without a dedicated GPU or for development/testing:
-
-```bash
-# Build and start all containers
-docker compose up --build
-
-# Or run in detached mode
-docker compose up --build -d
-
-# View logs
-docker compose logs -f
-```
 
 ### GPU Deployment (NVIDIA)
 
@@ -181,11 +215,8 @@ For faster inference on systems with NVIDIA GPU:
 # Verify NVIDIA runtime is available
 docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
 
-# Build and start with GPU support
+# Build and start with GPU support (Option B only)
 docker compose -f docker-compose.gpu.yml up --build
-
-# Or run in detached mode
-docker compose -f docker-compose.gpu.yml up --build -d
 ```
 
 **GPU Requirements**:
@@ -219,19 +250,6 @@ docker compose -f docker-compose.gpu.yml down
 
 # Remove volumes and images (full cleanup)
 docker compose down -v --rmi all
-```
-
-### Local Development (Without Docker)
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\activate
-pip install -r requirements.txt
-
-# Start TF Serving containers separately, then:
-export TF_SERVING_URL_MODEL_A=http://localhost:8501/v1/models/ssd:predict
-export TF_SERVING_URL_MODEL_B=http://localhost:8502/v1/models/faster_rcnn:predict
-python app.py
 ```
 
 🚀 **Production deployment guide**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
@@ -307,8 +325,8 @@ ObjectDetectionComparisonFlaskApp/
 ├── detection_results.csv     # Aggregate inference metrics
 ├── models/
 │   ├── label_map.pbtxt       # Class ID → name mapping
-│   ├── ssd/                  # SSD SavedModel directory
-│   └── faster_rcnn/          # Faster R-CNN SavedModel directory
+│   ├── ssd/                  # SSD SavedModel directory (structure only, no weights)
+│   └── faster_rcnn/          # Faster R-CNN SavedModel directory (structure only, no weights)
 ├── results_details/          # Per-image detection JSON files
 ├── static/
 │   ├── classified/           # Processed images with bounding boxes
@@ -321,8 +339,18 @@ ObjectDetectionComparisonFlaskApp/
     └── DEPLOYMENT.md         # Cloud deployment guides (AWS, GCP, Azure)
 ```
 
+**Note**: The `models/ssd/` and `models/faster_rcnn/` directories in the repository contain only the model structure and configuration files. The trained weights (variables) are not included due to GitHub's file size limits. See the "Models and Weights" section above for instructions on obtaining the complete models.
+
 ---
 
+## Future Enhancements
+
+- **Batch inference endpoint**: Process multiple images in single request for throughput optimization
+- **Model versioning**: A/B testing framework for comparing model iterations
+- **Prometheus metrics**: Export inference latency histograms for Grafana dashboards
+- **TensorRT optimization**: INT8 quantization for edge deployment scenarios
+
+---
 
 ## Contributing
 
