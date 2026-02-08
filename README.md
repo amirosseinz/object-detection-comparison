@@ -286,30 +286,6 @@ Based on logged inference data across 40+ processed images:
 - Faster R-CNN occasionally detects additional objects at lower confidence
 - Large images (>1MB) increase preprocessing time proportionally
 
----
-
-## Professional Skills Demonstrated
-
-**ML Engineering**:
-- Integration of pre-trained TensorFlow SavedModels with TensorFlow Serving inference API
-- Confidence thresholding and non-maximum suppression handling
-- Bounding box coordinate transformation (normalized → pixel space)
-
-**Backend Development**:
-- RESTful API design with proper HTTP status codes and content negotiation
-- File upload validation (extension whitelist, MIME checking, 16MB limit)
-- Structured logging with request correlation IDs
-
-**DevOps/Infrastructure**:
-- Multi-container orchestration with Docker Compose
-- Service health checks for container orchestration readiness
-- GPU deployment configuration with NVIDIA runtime support
-- Environment-based configuration management
-
-**Software Engineering Practices**:
-- Error handling with graceful degradation (app remains healthy if TF Serving unavailable)
-- Directory structure with separation of concerns (routes, processing, storage)
-- Cross-platform compatibility (font loading, path handling)
 
 ---
 
@@ -340,15 +316,6 @@ ObjectDetectionComparisonFlaskApp/
 ```
 
 **Note**: The `models/ssd/` and `models/faster_rcnn/` directories in the repository contain only the model structure and configuration files. The trained weights (variables) are not included due to GitHub's file size limits. See the "Models and Weights" section above for instructions on obtaining the complete models.
-
----
-
-## Future Enhancements
-
-- **Batch inference endpoint**: Process multiple images in single request for throughput optimization
-- **Model versioning**: A/B testing framework for comparing model iterations
-- **Prometheus metrics**: Export inference latency histograms for Grafana dashboards
-- **TensorRT optimization**: INT8 quantization for edge deployment scenarios
 
 ---
 
