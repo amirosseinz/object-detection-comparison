@@ -1,0 +1,21 @@
+{
+  "csv_sha256": "c2583de2a759b349aac244560aa95bcb2c5968e5c2a2d0d6a7d817c5c990fcb2",
+  "distinct_original_filenames": 13,
+  "faster_rcnn_model_b": {
+    "max_seconds": 18.007312,
+    "median_seconds": 2.776555,
+    "min_seconds": 0.325426,
+    "p95_nearest_rank_seconds": 6.952185
+  },
+  "logged_requests": 41,
+  "median_paired_gap_b_minus_a_seconds": 0.056105,
+  "model_a_faster_requests": 23,
+  "model_b_faster_requests": 18,
+  "ssd_model_a": {
+    "max_seconds": 26.672371,
+    "median_seconds": 2.624289,
+    "min_seconds": 0.803909,
+    "p95_nearest_rank_seconds": 14.59491
+  },
+  "ties": 0
+}

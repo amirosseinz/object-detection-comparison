@@ -9,6 +9,7 @@ import sys
 import platform
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 from flask import Flask, request, render_template, redirect, url_for, jsonify, flash, send_from_directory, g
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -228,6 +229,16 @@ def before_request():
 def allowed_file(filename):
     """Checks if the file extension is allowed."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+def bundled_sample(filename):
+    if not filename or Path(filename).name != filename or not allowed_file(filename):
+        return None
+    directory = (Path(app.config['STATIC_FOLDER']) / 'originals').resolve()
+    sample = (directory / filename).resolve()
+    if sample.parent != directory or not sample.is_file():
+        return None
+    return sample
+
 
 def save_results(image_id, original_filename, original_filepath, file_size, model_a_data, model_b_data):
     """Saves the processing results summary to the CSV file."""
@@ -551,8 +562,8 @@ def inference():
     """Handles image upload, processing, saving results, and redirecting."""
     if request.method == 'GET' and 'sample' in request.args:
         sample_filename = request.args.get('sample')
-        sample_path = os.path.join(app.config['STATIC_FOLDER'], 'originals', sample_filename)
-        if os.path.exists(sample_path):
+        sample_path = bundled_sample(sample_filename)
+        if sample_path is not None:
             image_id = str(uuid.uuid4())
             original_filename = secure_filename(sample_filename)
             file_extension = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'jpg'
@@ -703,4 +714,4 @@ def health_check():
     return jsonify(status), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=False)
