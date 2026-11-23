@@ -22,6 +22,10 @@ The median within-request difference (Faster R-CNN minus SSD) is 0.056 seconds. 
 
 The Git checkout includes SavedModel graphs and label maps. It requires matching TensorFlow variable files to serve predictions. Install both complete SavedModels under `models/ssd/1/` and `models/faster_rcnn/1/`, including their `variables/` directories. Keep their output signatures and class IDs consistent with the app.
 
+The inference path requires one TensorFlow Serving prediction object with equally sized `detection_boxes`, `detection_scores` and `detection_classes` arrays. Active detections require finite, ordered box coordinates, probability scores and integer class IDs. Optional `num_detections` limits processing to the active entries, excluding padding. A valid response with zero detections succeeds. Missing fields, inconsistent array lengths and invalid values return a failed inference and the upload route displays a model failure warning.
+
+Run the response and upload-route regression tests with `python -m unittest test_inference_response -v` in an environment with the Flask application dependencies. These tests use generated fixture images and mocked model responses. Live validation with the complete trained weights remains separate. The legacy CSV continues to contain timings without model success flags.
+
 ```bash
 docker compose up --build
 curl http://localhost/health

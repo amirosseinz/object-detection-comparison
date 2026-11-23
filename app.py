@@ -17,6 +17,7 @@ import requests
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import io
+from inference_response import parse_detections
 
 # --- Request ID Generator for Tracing ---
 def generate_request_id():
@@ -313,24 +314,7 @@ def process_image_with_model(image_filepath, model_url, output_folder, image_id,
         result = response.json()
         logging.info(f"[{image_id}-{model_suffix}] Received response from model at {model_url}")
 
-        predictions = result.get('predictions', [])
-        if not predictions or not isinstance(predictions, list) or not predictions[0]:
-            logging.warning(f"[{image_id}-{model_suffix}] Model returned no or invalid predictions.")
-            boxes, scores, classes = [], [], []
-        else:
-            pred_data = predictions[0]
-            if isinstance(pred_data, dict):
-                boxes = pred_data.get('detection_boxes', [])
-                scores = pred_data.get('detection_scores', [])
-                classes = pred_data.get('detection_classes', [])
-            else:
-                logging.error(f"[{image_id}-{model_suffix}] Unrecognized prediction structure: {pred_data}")
-                boxes, scores, classes = [], [], []
-
-        valid_detections = [
-            (box, score, cls_id) for box, score, cls_id in zip(boxes, scores, classes)
-            if isinstance(score, (float, int)) and score > CONFIDENCE_THRESHOLD and isinstance(box, list) and len(box) == 4
-        ]
+        valid_detections = parse_detections(result, CONFIDENCE_THRESHOLD)
         detection_count = len(valid_detections)
         logging.info(f"[{image_id}-{model_suffix}] Found {detection_count} detections above threshold")
 
